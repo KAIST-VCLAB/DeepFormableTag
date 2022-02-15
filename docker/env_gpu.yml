@@ -1,0 +1,36 @@
+name: base
+channels:
+  - pytorch-lts
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - pytorch=1.8.2=py3.7_cuda11.1_cudnn8.0.5_0
+  - torchvision=0.9.2=py37_cu111
+  - cudatoolkit=11.1.74=h6bb024c_0
+  - tensorboard
+  - scikit-image
+  - scikit-learn
+  - scipy
+  - pycairo
+  - matplotlib
+  - jupyter
+  - jupyterlab
+  - notebook
+  - ninja
+  - cython
+  - typing
+  - future
+  - pytest
+  - plyfile
+  - pip:
+    - opencv-contrib-python==4.5.5.62
+    - kornia==0.6.2
+    - pycocotools==2.0.4
+    - shapely==1.8.0
+    - glfw
+    - ipympl
+    - pyrr
+    - future-fstrings
+    - pyopengl
+    - pyopengl-accelerate

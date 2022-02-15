@@ -1,0 +1,57 @@
+_BASE_: "VoVNet/faster_rcnn_V_19_dw_FPNLite_3x.yaml"
+MODEL:
+  META_ARCHITECTURE: "GeneralizedRCNN_RenderInput"
+  # WEIGHTS: "/host/models/deepformable_model.pth"
+  WEIGHTS: "https://www.dropbox.com/s/7h6zn0owumucs48/faster_rcnn_V_19_eSE_dw_FPNLite_ms_3x.pth?dl=1"
+  MASK_ON: True
+  MARKER_GENERATOR:
+    NAME: "GeneralizedGenerator"
+    CONV_DIMS: [[8], [6], [6]]
+    FINAL_CONV_KERNEL_SIZE: 1
+    NUM_GENERATION_BITS: 36
+    MARKER_SIZE: (32, 32)
+  VOVNET:
+    OUT_FEATURES: ["stem", "stage2", "stage3", "stage4", "stage5"]
+  ROI_HEADS:
+    NAME: "MarkerROIHeads"
+    NUM_CLASSES: 96
+    NMS_THRESH_TEST: 0.1
+    SCORE_THRESH_TEST: 0.8
+  PROPOSAL_GENERATOR:
+    NAME: "RPN_AdaptiveLoss"
+  RPN:
+    PRE_NMS_TOPK_TEST: 5000
+    POST_NMS_TOPK_TEST: 1000
+INTERMEDIATE_AUGMENTOR:
+  AUG_LIST: [
+    "PerspectiveAugmentor", "TpsAugmentor", "RadialDistortionAugmentor",
+    "DefocusBlurAugmentor", "MotionBlurAugmentor", "HueShiftAugmentor", 
+    "BrightnessAugmentor", "NoiseAugmentor", "GammaAugmentor", "GammaCorrector"] # "JPEGAugmentor"
+  EXEC_PROBA_LIST: [0.4, 0.5, 0.3, 0.4, 0.4, 0.4, 0.4, 0.45, 0.3, 1.0]
+RENDERER:
+    SHADING_METHOD: "cook-torrance"
+DATASETS:
+  TRAIN: ("deepformable-train",)
+  TEST: ("deepformable-test",)
+TEST:
+  EVAL_PERIOD: 2500
+  DETECTIONS_PER_IMAGE: 1000
+SOLVER:
+  BASE_LR: 0.02
+  IMS_PER_BATCH: 16
+  STEPS: (20000,30000)
+  MAX_ITER: 35000
+  CLIP_GRADIENTS:
+    ENABLED: True
+VIS_PERIOD: 500
+INPUT:
+  MIN_SIZE_TRAIN: (640, 672, 704, 720, 736, 768, 800, 1080)
+  MAX_SIZE_TRAIN: 1920
+  MAX_SIZE_TEST: 1920
+  RANDOM_FLIP: "none" # Markers will also be mirror flipped in this case, so we disable it
+  MASK_FORMAT: "bitmask"
+  # MIN_SIZE_TEST: 0
+DATALOADER:
+  NUM_WORKERS: 8
+OUTPUT_DIR: "/root/test"
+VERSION: 2
