@@ -91,7 +91,7 @@ please follow the tutorial file [jupyter/deepformable_tutorial.ipynb](jupyter/de
 cd /host && jupyter notebook --allow-root
 ```
 
-You can also run this on [Google Colab](https://colab.research.google.com/drive/1h0XNRmH_bFogwE8h9-L0GFmyUnXqHUsy) in the Google Drive that we additionally provide.
+You can also run this on [Google Colab](https://colab.research.google.com/github/KAIST-VCLAB/DeepFormableTag/blob/master/jupyter/deepformable_tutorial.ipynb) in the Google Drive that we additionally provide.
 
 ### Detection Demo
 
