@@ -155,7 +155,7 @@ def add_model_other_config(cfg: CN):
     _C.INPUT.MARKER_TEST_SIZE = 50
 
     _C.RENDERER = CN()
-    _C.RENDERER.NAME = "MarkerRendererDiffrast"
+    _C.RENDERER.NAME = "MarkerRenderer"
     _C.RENDERER.SHADING_METHOD = "cook-torrance"
     _C.RENDERER.GAMMA = 2.2
     _C.RENDERER.EPSILON = 1e-8

@@ -145,11 +145,17 @@ python tools/train.py --eval-only --dataset-test-dir /host/output/test-realworld
 
 We provide training code which you can run through below command:
 ```
-python train.py --num-gpus 8 \
-	--config-file configs/deepformable-main.yaml \
-	--marker-config-file /host/output/test-realworld/marker_config.json
+python tools/train.py --num-gpus 8 --config-file configs/deepformable-main.yaml
 ```
-We use 8 GPU servers to train our model. For the case of not enough resources, learning rate and batch size can be adjusted for stable training. For preparing dataset please refer below.
+We use 8 GPU servers to train our model. For the case of not enough resources, learning rate and batch size can be adjusted for stable training. 
+
+You can use below line to run docker container for training in headless server environment:
+```
+docker run --rm -it --runtime=nvidia --ipc=host --network=host -v $PWD:/host \
+	-v /home/myaldiz/Data/Deepformable:/Data deepformable \
+	/bin/sh -c 'cd /host; python -m pip install -e .; bash'
+```
+We place our data to `/Data/Datasets/` folder, which we mount through `-v` option. For preparing dataset please refer below.
 
 ## Further Details
 
