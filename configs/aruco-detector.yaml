@@ -1,0 +1,20 @@
+MODEL:
+  META_ARCHITECTURE: "ClassicalDetector"
+  MARKER_GENERATOR:
+    NAME: "ArucoGenerator"
+    MARKER_SIZE: (8, 8)
+    BORDER_BITS: 1
+    ARUCO_DICT: "6x6_100"
+    NUM_GENERATION_BITS: 36
+  ROI_HEADS:
+    NUM_CLASSES: 96
+    # NUM_CLASSES: 1000
+DATASETS:
+  TRAIN: ("deepformable-train",)
+  TEST: ("deepformable-test",)
+INPUT:
+  MIN_SIZE_TEST: 0
+  MAX_SIZE_TEST: 1920
+  RANDOM_FLIP: "none" # Markers will also be mirror flipped in this case, so we disable it
+  MASK_FORMAT: "polygon"
+VERSION: 2

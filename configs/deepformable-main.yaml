@@ -26,32 +26,39 @@ INTERMEDIATE_AUGMENTOR:
   AUG_LIST: [
     "PerspectiveAugmentor", "TpsAugmentor", "RadialDistortionAugmentor",
     "DefocusBlurAugmentor", "MotionBlurAugmentor", "HueShiftAugmentor", 
-    "BrightnessAugmentor", "NoiseAugmentor", "GammaAugmentor", "GammaCorrector"] # "JPEGAugmentor"
-  EXEC_PROBA_LIST: [0.4, 0.5, 0.3, 0.4, 0.4, 0.4, 0.4, 0.45, 0.3, 1.0]
+    "BrightnessAugmentor", "NoiseAugmentor", "GammaAugmentor", 
+    "GammaCorrector", "JPEGAugmentor"]
+  EXEC_PROBA_LIST: [0.4, 0.5, 0.3, 0.4, 0.4, 0.4, 0.4, 0.45, 0.3, 1.0, 0.35]
 RENDERER:
-    SHADING_METHOD: "cook-torrance"
+  # NAME: "MarkerRenderer"
+  SHADING_METHOD: "cook-torrance"
 DATASETS:
-  TRAIN: ("deepformable-train",)
-  TEST: ("deepformable-test",)
+  TRAIN: ("deepformable-rendered-train",)
+  TEST: ("deepformable-rendered-test1", "deepformable-rendered-aug-test1",)
+  # TEST: (
+  #   "deepformable-rendered-test1", "deepformable-rendered-aug-test1", 
+  #   "deepformable_flat-real-load_markers-test2", "deepformable_flat-real-load_markers-aug-test2",
+  #   "deepformable_deformation-real-load_markers-test3", "deepformable_deformation-real-load_markers-aug-test3",)
 TEST:
   EVAL_PERIOD: 2500
   DETECTIONS_PER_IMAGE: 1000
 SOLVER:
   BASE_LR: 0.02
   IMS_PER_BATCH: 16
-  STEPS: (20000,30000)
-  MAX_ITER: 35000
+  STEPS: (20000,25000)
+  MAX_ITER: 30000
   CLIP_GRADIENTS:
     ENABLED: True
 VIS_PERIOD: 500
 INPUT:
+  MIN_SIZE_TEST: 0
   MIN_SIZE_TRAIN: (640, 672, 704, 720, 736, 768, 800, 1080)
   MAX_SIZE_TRAIN: 1920
   MAX_SIZE_TEST: 1920
   RANDOM_FLIP: "none" # Markers will also be mirror flipped in this case, so we disable it
-  MASK_FORMAT: "bitmask"
-  # MIN_SIZE_TEST: 0
+  MASK_FORMAT: "polygon"
 DATALOADER:
   NUM_WORKERS: 8
-OUTPUT_DIR: "/root/test"
+SEED: 13
+OUTPUT_DIR: "/Data/Experiments/test"
 VERSION: 2

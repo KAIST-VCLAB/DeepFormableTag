@@ -38,7 +38,12 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
         self.test_apply_nms = cfg.TEST.APPLY_NMS
         self.nms_score_criteria = str(cfg.TEST.NMS_SCORE_CRITERIA).lower()
         self.marker_postprocessing = cfg.TEST.MARKER_POSTPROCESSING
+        
         self.add_module("marker_generator", build_marker_generator(cfg))
+        # Freeze the marker generator parameters if requested
+        if not cfg.MODEL.MARKER_GENERATOR.TRAINABLE:
+            for param in self.marker_generator.parameters():
+                param.requires_grad = False
 
     def visualize_training(self, batched_inputs, proposals):
         """
@@ -49,7 +54,7 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
         max_vis_prop = 20
 
         for input, prop in zip(batched_inputs, proposals):
-            img = input["rendered_image"].detach()
+            img = input["image"].detach()
             img = convert_image_to_rgb(img.permute(1, 2, 0), self.input_format)
             v_gt = Visualizer(img, None)
             v_gt = v_gt.overlay_instances(boxes=input["instances"].gt_boxes.to("cpu"))
@@ -70,10 +75,7 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
         """
         Modified to support gradients for the image
         """
-        if "rendered_image" in batched_inputs[0]:
-            images = [(x["rendered_image"] - self.pixel_mean) / self.pixel_std for x in batched_inputs]
-        else:
-            images = [(x["image"].to(self.device) - self.pixel_mean) / self.pixel_std for x in batched_inputs]
+        images = [(x["image"].to(self.device) - self.pixel_mean) / self.pixel_std for x in batched_inputs]
         images = ImageList.from_tensors(images, self.backbone.size_divisibility)
         return images
 
@@ -107,7 +109,8 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
         sample_locations = result.get("sample_locations", None)
 
         if decoded_messages is not None:
-            scores = torch.sigmoid(obj_scores).squeeze()        
+            scores = torch.sigmoid(obj_scores).squeeze()
+            pred_instances.objectness_scores = scores
         else:
             scores = F.softmax(obj_scores, dim=-1)[:, :-1]
         
@@ -117,10 +120,7 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
             pred_instances.decoded_messages_avg_confidence = 1.0 - torch.mean(
                 torch.abs(pred_instances.decoded_messages_confidence-decoded_messages), dim=1)
         else:
-            # pred_instances.pred_classes = filter_inds[:, 1]
-            # TODO: Fix this!!
-            pass
-        pred_instances.objectness_scores = scores
+            pred_instances.scores, pred_instances.pred_classes = torch.max(scores, dim=-1)
 
         # Scale corners and sample_locations
         scale_tensor = torch.tensor([scale_x, scale_y], device=corners.device)
@@ -159,8 +159,8 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
             pred_instances = self.marker_generator.postprocessing(pred_instances)
 
         # Select the score wrt self.nms_score_criteria
-        scores = pred_instances.objectness_scores
         if pred_instances.has("decoded_messages"):
+            scores = pred_instances.objectness_scores
             if "bit_similarity" in self.nms_score_criteria and pred_instances.has("bit_similarity"):
                 scores = pred_instances.bit_similarity
             elif "message_confidence" in self.nms_score_criteria and pred_instances.has("decoded_messages_avg_confidence"):
@@ -171,7 +171,7 @@ class GeneralizedRCNN_RenderInput(GeneralizedRCNN):
                 and pred_instances.has("decoded_messages_avg_confidence")\
                 and pred_instances.has("bit_similarity"):
                 scores = scores * pred_instances.decoded_messages_avg_confidence * pred_instances.bit_similarity
-        pred_instances.scores = scores
+            pred_instances.scores = scores
 
         if self.test_apply_nms:
             pred_instances = self.apply_nms_instances(pred_instances)

@@ -38,9 +38,9 @@ def load_deepformable_json(
         meta = MetadataCatalog.get(dataset_name)
         cat_ids = sorted(coco_api.getCatIds())
         cats = coco_api.loadCats(cat_ids)
-        # The categories in a custom json file may not be sorted.
-        thing_classes = [c["name"] for c in sorted(cats, key=lambda x: x["id"])]
-        if not "thing_classes" in meta.as_dict():
+        if "thing_classes" not in meta.as_dict():
+            # The categories in a custom json file may not be sorted.
+            thing_classes = [c["name"] for c in sorted(cats, key=lambda x: x["id"])]
             meta.thing_classes = thing_classes
         
         if "marker_ids" in cats[0]:
@@ -61,8 +61,11 @@ def load_deepformable_json(
 Category ids in annotations are not in [1, #categories]! We'll apply a mapping for you.
 """
                 )
-        id_map = {v: i for i, v in enumerate(cat_ids)}
-        meta.thing_dataset_id_to_contiguous_id = id_map
+        if "thing_dataset_id_to_contiguous_id" not in meta.as_dict():
+            id_map = {v: i for i, v in enumerate(cat_ids)}
+            meta.thing_dataset_id_to_contiguous_id = id_map
+        else:
+            id_map = meta.thing_dataset_id_to_contiguous_id
 
     # sort indices for reproducible results
     img_ids = sorted(coco_api.imgs.keys())

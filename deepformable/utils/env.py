@@ -4,6 +4,8 @@ Edited by Mustafa B. Yaldiz
 """
 import torch
 import detectron2
+import numpy as np
+import random
 
 
 _DEEPFORMABLE_ENV_SETUP_DONE = False
@@ -26,3 +28,19 @@ def setup_environment():
     # fmt: on
 
 
+# Use detectron2.utils.env.seed_all_rng to set the seed
+# to specified value.
+
+def save_seed_info():
+    # Stores random seed states
+    return {
+        "torch": torch.get_rng_state(),
+        "numpy": np.random.get_state(),
+        "random": random.getstate()
+    }
+
+def load_seed_info(seed_info):
+    # Loads seed states
+    torch.set_rng_state(seed_info["torch"])
+    np.random.set_state(seed_info["numpy"])
+    random.setstate(seed_info["random"])

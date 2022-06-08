@@ -29,7 +29,9 @@ If you use DeepFormableTag, please cite our paper with following BibTeX entry.
 }
 ```
 
-Currently we support inference and evaluation only for comparisons. Later we will release rendering and training codes. We cleaned-up and re-implemented the code for the release.
+- We cleaned-up and re-implemented the code for the release that includes training, inference, and evaluation codes. 
+- DeepformableTag is highly flexible and **does not require specialized camera or printer**.  
+- We designed all the components with flexible inference situations in mind, you can quickly modify the code to match certain environmental conditions.
 
 ## Installation
 There are three ways, *Docker*, *Jupyter notebook* and *Anaconda*, to install our implementation. We recommend using Docker as it is closer to the development environment.
@@ -130,14 +132,24 @@ python tools/predictor_demo.py --video-input /host/files/example_video.mov \
 
 ### Evaluation on Test Data
 
-We provide [real-world test datasets](https://drive.google.com/file/d/1vvUqkoL082lQKkaxz792wIrG-qUBh87G/view?usp=sharing) (`flat` / `deformation_2cm` / `deformation_6cm` / `deformation_10cm`) to evaluate our model:
+We provide [real-world test datasets](https://drive.google.com/file/d/1vvUqkoL082lQKkaxz792wIrG-qUBh87G/view?usp=sharing) (`flat` / `deformation` / `deformation/deformation_2cm` / `deformation/deformation_6cm` / `deformation/deformation_10cm`) to evaluate our model:
 Here is the command to run the evaluation script:
 ```bash
-python tools/eval.py --dataset-test-dir /host/output/test-realworld/flat \
+python tools/train.py --eval-only --dataset-test-dir /host/output/test-realworld/flat \
 	--config-file configs/deepformable-main.yaml \
 	--marker-config-file /host/output/test-realworld/marker_config.json \
 	MODEL.WEIGHTS /host/models/deepformable_model.pth
 ```
+
+### Training
+
+We provide training code which you can run through below command:
+```
+python train.py --num-gpus 8 \
+	--config-file configs/deepformable-main.yaml \
+	--marker-config-file /host/output/test-realworld/marker_config.json
+```
+We use 8 GPU servers to train our model. For the case of not enough resources, learning rate and batch size can be adjusted for stable training. For preparing dataset please refer below.
 
 ## Further Details
 

@@ -38,7 +38,7 @@ def get_version():
             f.write("".join(new_init_py))
     return version
 
-PROJECTS = {}
+# PROJECTS = {}
 
 setup(
     name="deepformable",
@@ -46,25 +46,10 @@ setup(
     author="Mustafa B. YALDIZ",
     url="https://github.com/KAIST-VCLAB/DeepFormableTag",
     description="DeepformableTag is data-driven fiducial marker system.",
-    # packages=find_packages(exclude=("configs", "tests*")) + list(PROJECTS.keys()),
-    # package_dir=PROJECTS,
-    # package_data={"deepformable.model_zoo": get_model_zoo_configs()},
+    packages=find_packages(),
     python_requires=">=3.7",
-    install_requires=[
-        "detectron2>=0.4.1",
-        "shapely>=1.7.1",
-    ],
-    # extras_require={
-    #     # optional dependencies, required by some features
-    #     "all": [],
-    #     # dev dependencies. Install them by `pip install 'detectron2[dev]'`
-    #     "dev": [
-    #         "flake8==3.8.1",
-    #         "isort==4.3.21",
-    #         "flake8-bugbear",
-    #         "flake8-comprehensions",
-    #     ],
-    # },
-    # ext_modules=get_extensions(),
-    # cmdclass={"build_ext": torch.utils.cpp_extension.BuildExtension},
+    # install_requires=[
+    #     "detectron2>=0.4.1",
+    #     "shapely>=1.7.1",
+    # ],
 )

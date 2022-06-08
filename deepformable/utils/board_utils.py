@@ -217,13 +217,16 @@ def marker_metadata_loader(cfg, marker_config_file):
 
         markers = sorted(marker_config['markers'], key=lambda x: x['marker_id'])
         binary_messages = [[float(i) for i in m['binary']] for m in markers]
-        thing_classes = [m['text'] for m in markers]
+        marker_classes = [m['text'] for m in markers]
+        id_map = {m['marker_id']+1: m['marker_id'] for m in markers}
 
-        cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(thing_classes)
+        cfg.MODEL.ROI_HEADS.NUM_CLASSES = len(marker_classes)
 
-        metadata_name = cfg.DATASETS.TEST[0]
-        MetadataCatalog.get(metadata_name).set(
-            messages=binary_messages, thing_classes=thing_classes)
+        for dataset_name in cfg.DATASETS.TEST:
+            MetadataCatalog.get(dataset_name).set(
+                messages=binary_messages, thing_classes=marker_classes,
+                thing_dataset_id_to_contiguous_id=id_map,
+            )
     else:
         return False
     return True

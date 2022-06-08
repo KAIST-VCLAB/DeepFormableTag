@@ -4,6 +4,7 @@ from detectron2.config import CfgNode as CN
 def add_marker_generator_config(cfg: CN):
     _C = cfg
     _C.MODEL.MARKER_GENERATOR = CN()
+    _C.MODEL.MARKER_GENERATOR.TRAINABLE = True
     _C.MODEL.MARKER_GENERATOR.NAME = "GeneralizedGenerator"
     _C.MODEL.MARKER_GENERATOR.MARKER_SIZE = (16, 16)
     _C.MODEL.MARKER_GENERATOR.ARUCO_DICT = "6x6_1000"
@@ -23,6 +24,7 @@ def add_marker_generator_config(cfg: CN):
     _C.MODEL.MARKER_GENERATOR.PADDING_MODE = "zeros"
     _C.MODEL.MARKER_GENERATOR.FINAL_CONV_KERNEL_SIZE = 3
     _C.MODEL.MARKER_GENERATOR.MARKERS_FILE_LOCATION = "data/e2e_markers.npz"
+    _C.MODEL.MARKER_GENERATOR.DATASET_ROOT = "/Data/Datasets/mirflickr_images1"
 
 
 def add_intermediate_augmentor_config(cfg: CN):
@@ -50,9 +52,12 @@ def add_intermediate_augmentor_config(cfg: CN):
     _C.INTERMEDIATE_AUGMENTOR.BrightnessAugmentor.BRIGHTNESS_RANGE = (0.2, 1.2, 0.4)
     _C.INTERMEDIATE_AUGMENTOR.NoiseAugmentor = CN()
     _C.INTERMEDIATE_AUGMENTOR.NoiseAugmentor.NOISE_RANGE = (0.0, 0.012, 0.05)
+    
+    # Jpeg range is starts from 1 coefficient to 63, ranging from (0-62)
     _C.INTERMEDIATE_AUGMENTOR.JPEGAugmentor = CN()
-    _C.INTERMEDIATE_AUGMENTOR.JPEGAugmentor.Y_QUALITY_RANGE = (12, 20, 15) # Andreas_prev (10,20)
-    _C.INTERMEDIATE_AUGMENTOR.JPEGAugmentor.UV_QUALITY_RANGE = (5, 8, 6) # Andreas_prev (4,8)
+    _C.INTERMEDIATE_AUGMENTOR.JPEGAugmentor.Y_QUALITY_RANGE = (12, 61, 20) # Andreas_prev (10,20)
+    _C.INTERMEDIATE_AUGMENTOR.JPEGAugmentor.UV_QUALITY_RANGE = (10, 60, 15) # Andreas_prev (4,8)
+    
     _C.INTERMEDIATE_AUGMENTOR.MAX_IMAGE_SIZE = (1080, 1920) # Andreas_prev (4,8)
     _C.INTERMEDIATE_AUGMENTOR.RadialDistortionAugmentor = CN()
     _C.INTERMEDIATE_AUGMENTOR.RadialDistortionAugmentor.UNDISTORT_ITER = 20
@@ -114,6 +119,7 @@ def add_roi_head_config(cfg: CN):
     _C.TEST.APPLY_NMS = True
     _C.TEST.DECODING_SCORE_BY_MESSAGE_CONFIDENCE = True # Otherwise uses objectness score
     _C.TEST.MARKER_POSTPROCESSING = True
+    _C.TEST.LOAD_MESSAGES = True
     # This option choses which scoring criteria to use for NMS. Options are:
     # "bit_similarity" uses the distance of predictions to the provided class of messages [used option in the paper]
     # "message_confidence" uses the confidence of how each bit is predicted
@@ -143,19 +149,13 @@ def add_model_other_config(cfg: CN):
 
     _C.INPUT.PREDICTOR_RESIZE = False
     _C.INPUT.FILTER_BOX_THRESHOLD = 30
-    _C.INPUT.MARKER_MIN = 40
-    _C.INPUT.MARKER_MAX = 190
-    _C.INPUT.MAX_MARKERS_PER_IMAGE = 100
+    _C.INPUT.FILTER_BOX_THRESHOLD_TEST = 5
+    _C.INPUT.PLACEMENT_MARKER_MINMAX = (40, 190)
+    _C.INPUT.MAX_MARKERS_PER_IMAGE = 128
     _C.INPUT.MARKER_TEST_SIZE = 50
 
-    _C.INPUT.SPECULAR_MAX = 1.2
-    _C.INPUT.SPECULAR_TEST = 0.35
-    _C.INPUT.ROUGHNESS_TEST = 0.25
-    _C.INPUT.DIFFUSE_BOARD = 0.9
-    _C.INPUT.PROCESS_RENDERER_PARAMS = True
-    _C.INPUT.NO_GRAD_GENERATOR = False
-
     _C.RENDERER = CN()
+    _C.RENDERER.NAME = "MarkerRendererDiffrast"
     _C.RENDERER.SHADING_METHOD = "cook-torrance"
     _C.RENDERER.GAMMA = 2.2
     _C.RENDERER.EPSILON = 1e-8
@@ -163,7 +163,7 @@ def add_model_other_config(cfg: CN):
     _C.RENDERER.ROUGHNESS_RANGE = (0.14, 0.6, 0.25)
     _C.RENDERER.DIFFUSE_RANGE = (0.9, 1.0, 0.94)
     _C.RENDERER.NORMAL_NOISE_RANGE = (0.0, 0.015, 0.005)
-    _C.RENDERER.SPECULAR_RANGE = (0.3, 1.0, 0.35)
+    _C.RENDERER.SPECULAR_RANGE = (0.02, 1.0, 0.35)
 
     _C.DEMO = CN()
     _C.DEMO.DRAW_MASK = False

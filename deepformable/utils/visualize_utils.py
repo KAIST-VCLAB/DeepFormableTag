@@ -10,6 +10,7 @@ from typing import List
 from collections import deque
 import numpy as np
 import random
+import pycocotools.mask as mask_util
 
 import cv2
 import torch
@@ -24,11 +25,19 @@ from detectron2.utils.visualizer import Visualizer, _create_text_labels
 
 def convert_mapped_instances(dataset_dict):
     instances = deepcopy(dataset_dict["instances"].to("cpu"))
-    if instances.gt_segm.size(0) != 0:
+    if instances.has("gt_segm") and instances.gt_segm.size(0) != 0:
         gt_segm_np = instances.gt_segm.view(instances.gt_segm.size(0), 1, -1).numpy()
         generic_mask = GenericMask(gt_segm_np.tolist(), *instances.image_size)
-        instances.pred_masks = [generic_mask.polygons_to_mask([p]) for p in generic_mask.polygons]    
-    
+        instances.pred_masks = [generic_mask.polygons_to_mask([p]) for p in generic_mask.polygons]
+        instances.pred_corners = instances.gt_segm[:,[0,2,4,6]]
+    if instances.has("gt_masks"):
+        instances.pred_masks = [
+                mask_util.decode(mask_util.merge(
+                    mask_util.frPyObjects(p, *instances.image_size)))[:, :] for p in instances.gt_masks.polygons]
+        instances.pred_corners = torch.tensor(instances.gt_masks.polygons).view(-1,4,2)
+    if instances.has("gt_sample_locs"):
+        instances.pred_sample_locations = instances.gt_sample_locs
+
     instances.pred_boxes = instances.gt_boxes
     instances.pred_classes = instances.gt_classes
     instances.scores = torch.ones(len(instances.pred_classes))
@@ -46,10 +55,12 @@ def random_colors(N, rgb=False, maximum=255):
     return np.array(ret)
 
 class DeepformableVisualizer:
-    def __init__(self, metadata):
-        self.metadata = metadata
-
-        num_classes = len(metadata.thing_classes)
+    def __init__(self, metadata=None, num_classes=10):
+        
+        metadata = MetadataCatalog.get("__unused") if metadata is None else metadata
+        self.marker_text = metadata.get("thing_classes", [f"{i}" for i in range(num_classes)])
+        num_classes = len(self.marker_text)
+        
         self.box_colors = random_colors(num_classes, maximum=1.0)
         self.segm_colors = random_colors(num_classes, maximum=1.0)
 
@@ -65,6 +76,8 @@ class DeepformableVisualizer:
             1.0, 0.0, 0.0, 0.0, 0.0, 1.0,
             0.0, 1.0, 0.0, 0.8, 0.3, 0.9
         ]).reshape(-1,3)
+
+        self.sample_locations_color = np.array([0.1, 0.1, 0.1])
     
     def draw_instance_predictions(
         self,
@@ -73,12 +86,13 @@ class DeepformableVisualizer:
         draw_mask: bool = False,
         draw_bbox: bool = True,
         draw_corners: bool = True,
+        draw_sample_locations: bool = True,
         use_closest_similarity_score: bool = True,
         draw_scale: float = 1.0,
         draw_circle_radius: float = 2.0,
         color_redgreen_threshold: float = 0.0,
     ):
-        frame_visualizer = Visualizer(frame, self.metadata, scale=draw_scale)
+        frame_visualizer = Visualizer(frame, None, scale=draw_scale)
         
         if len(predictions) == 0:
             return frame_visualizer.get_output()
@@ -90,8 +104,17 @@ class DeepformableVisualizer:
         scores = predictions.scores.numpy() if predictions.has("scores") else np.ones(len(predictions))
         classes = predictions.pred_classes.numpy() if predictions.has("pred_classes") else np.zeros_like(scores, dtype=int)
         corners = predictions.pred_corners.numpy() if predictions.has("pred_corners") else None
+        sample_locs = predictions.pred_sample_locations.view(-1,2).numpy() if predictions.has("pred_sample_locations") else None
 
-        labels = _create_text_labels(classes, scores, self.metadata.get("thing_classes", None))
+        # If prediction classes are larger than the number of marker classes,
+        # create a new color and text for each class.
+        max_class = max(classes) + 1
+        if max_class > len(self.box_colors):
+            self.box_colors = np.concatenate([self.box_colors, random_colors(max_class - len(self.box_colors), maximum=1.0)])
+            self.segm_colors = np.concatenate([self.segm_colors, random_colors(max_class - len(self.segm_colors), maximum=1.0)])
+            self.marker_text = self.marker_text + [f"{i+len(self.marker_text)}" for i in range(max_class - len(self.marker_text))]
+
+        labels = _create_text_labels(classes, scores, self.marker_text)
 
         if draw_bbox and boxes is not None:
             if color_redgreen_threshold == 0.0:
@@ -117,12 +140,17 @@ class DeepformableVisualizer:
                 assigned_colors=self.segm_colors[classes],
                 alpha=0.5)
             
-        if draw_corners:
+        if draw_corners and corners is not None:
             for corners_i in corners:
                 for idx, coord in enumerate(corners_i):
                     frame_visualizer.draw_circle(
                         coord, color=self.corner_colors[idx], 
                         radius=draw_circle_radius)
+
+        if draw_sample_locations and sample_locs is not None:
+            for coord in sample_locs:
+                frame_visualizer.draw_circle(
+                        coord, color=self.sample_locations_color, radius=0.4)
 
         return frame_visualizer.get_output()
 
